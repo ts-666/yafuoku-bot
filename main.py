@@ -53,7 +53,7 @@ def main():
             client = genai.Client(api_key=GEMINI_API_KEY)
             prompt = f"以下の商品の仕入れ判定を行ってください。\n商品名: {title}\n価格: {price}\n簡潔に買いか見送りかを回答してください。"
             response = client.models.generate_content(
-                model="gemini-2.5-flash",
+                model="gemini-1.5-flash",
                 contents=prompt
             )
             ai_result = response.text
