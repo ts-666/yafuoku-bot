@@ -23,7 +23,7 @@ def main():
     headers = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
     }
-    url = "https://auctions.yahoo.co.jp/search/search?p=%E3%82%B8%E3%83%A3%E3%83%B3%E3%82%AF&va=%E3%82%B8%E3%83%A3%E3%83%B3%E3%82%AF&is_postage_paid=0&b=1&n=20"
+    url = "https://auctions.yahoo.co.jp/search/search?p=%E3%82%B8%E3%83%A3%E3%83%B3%E3%82%AF&va=%E3%82%B8%E3%83%A3%E3%83%B3%E3%82%AF&is_postage_paid=0&b=1&n=20&buynow=1"
     
     res = requests.get(url, headers=headers, timeout=15)
     soup = BeautifulSoup(res.text, "html.parser")
