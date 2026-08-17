@@ -51,9 +51,18 @@ def main():
     if GEMINI_API_KEY:
         try:
             client = genai.Client(api_key=GEMINI_API_KEY)
-            prompt = f"以下の商品の仕入れ判定を行ってください。\n商品名: {title}\n価格: {price}\n簡潔に買いか見送りかを回答してください。\n【重要：審査基準の緩和】確実に利益が出る商品だけでなく、「横流しや簡易清掃で利益が出る可能性がある商品」や「判断に迷う商品」も絶対に除外せず、【要確認】というステータスをつけてすべて通知してください。機会損失を防ぐことを最優先とします。"
+            prompt = f"""以下の商品の仕入れ判定を行ってください。
+商品名: {title}
+価格: {price}
+簡潔に買いか見送りかを回答してください。
+【重要：審査基準の緩和】確実に利益が出る商品だけでなく、「横流しや簡易清掃で利益が出る可能性がある商品」や「判断に迷う商品」も絶対に除外せず、【要確認】というステータスをつけてすべて通知してください。機会損失を防ぐことを最優先とします。"""
+            
+            # 利用可能なモデルを動的に取得
+            available_models = [m.name for m in client.models.list() if "generateContent" in getattr(m, "supported_actions", []) or "generateContent" in getattr(m, "supported_generation_methods", [])]
+            target_model = available_models[0] if available_models else "models/gemini-pro"
+            
             response = client.models.generate_content(
-                model="gemini-2.0-flash",
+                model=target_model,
                 contents=prompt
             )
             ai_result = response.text
