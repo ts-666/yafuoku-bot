@@ -38,8 +38,9 @@ def get_gemini_assessment(title, price):
     try:
         genai.configure(api_key=GEMINI_API_KEY)
 
+        # トークン上限を十分に確保
         generation_config = {
-            "max_output_tokens": 300,
+            "max_output_tokens": 1000,
             "temperature": 0.2,
         }
 
@@ -47,7 +48,7 @@ def get_gemini_assessment(title, price):
             "あなたはヤフオクせどりの査定AIです。英語、前置き、思考プロセスは一切出力せず、"
             "必ず以下の日本語フォーマットのみを返してください。\n"
             "判定: 【買い】/【見送り】/【要確認】\n"
-            "理由: （短文で記載）"
+            "理由: （50文字程度の短い1文で簡潔に記載）"
         )
 
         model = genai.GenerativeModel(
