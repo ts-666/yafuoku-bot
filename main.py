@@ -95,7 +95,6 @@ def main():
     price = price_elem.text.strip() if price_elem else "価格不明"
     raw_url = title_elem["href"] if title_elem else ""
 
-    # オークションIDを抽出してアプリ連携用の正式URLを生成
     auction_id_match = re.search(r"/auction/([a-zA-Z0-9]+)", raw_url)
     if auction_id_match:
         auction_id = auction_id_match.group(1)
@@ -107,14 +106,12 @@ def main():
 
     ai_result = get_gemini_assessment(title, price)
 
-    # タップしやすいリンク形式に調整
     msg = (
         f"【ヤフオク新着検知】\n"
         f"**商品名:** {title}\n"
         f"**価格:** {price}\n\n"
         f"🤖 **AI査定:**\n{ai_result}\n\n"
-        f"🔗 **商品ページ（アプリで開く）:**\n<{item_url}>\n"
-        f"{item_url}"
+        f"👉 [📱 **ヤフオクアプリで開く**]({item_url})"
     )
 
     send_discord(msg)
