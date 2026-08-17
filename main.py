@@ -17,7 +17,6 @@ def send_discord(message):
         print("[ERROR] DISCORD_WEBHOOK_URL が設定されていません。", flush=True)
         return
     try:
-        # Discordの2000文字制限対策
         if len(message) > 1800:
             message = message[:1700] + "\n\n...（長文のため省略）"
 
@@ -40,7 +39,7 @@ def get_gemini_assessment(title, price):
         genai.configure(api_key=GEMINI_API_KEY)
 
         generation_config = {
-            "max_output_tokens": 150,
+            "max_output_tokens": 300,
             "temperature": 0.2,
         }
 
@@ -51,7 +50,6 @@ def get_gemini_assessment(title, price):
             "理由: （短文で記載）"
         )
 
-        # テスト成功済みの確定モデル
         model = genai.GenerativeModel(
             model_name="gemini-3.6-flash",
             system_instruction=system_instruction,
@@ -60,7 +58,7 @@ def get_gemini_assessment(title, price):
 
         user_content = f"商品名: {title}\n価格: {price}\n仕入れ判定をお願いします。"
         response = model.generate_content(user_content)
-        
+
         if response and response.text:
             return response.text.strip()
         return "判定の生成に失敗しました。"
