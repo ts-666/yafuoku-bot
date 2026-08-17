@@ -38,7 +38,6 @@ def get_gemini_assessment(title, price):
     try:
         genai.configure(api_key=GEMINI_API_KEY)
 
-        # トークン上限を十分に確保
         generation_config = {
             "max_output_tokens": 1000,
             "temperature": 0.2,
@@ -59,7 +58,7 @@ def get_gemini_assessment(title, price):
 
         user_content = f"商品名: {title}\n価格: {price}\n仕入れ判定をお願いします。"
         response = model.generate_content(user_content)
-
+        
         if response and response.text:
             return response.text.strip()
         return "判定の生成に失敗しました。"
@@ -94,26 +93,28 @@ def main():
 
     title = title_elem.text.strip() if title_elem else "タイトル不明"
     price = price_elem.text.strip() if price_elem else "価格不明"
-    web_url = title_elem["href"] if title_elem else ""
+    raw_url = title_elem["href"] if title_elem else ""
 
-    auction_id_match = re.search(r"/auction/([a-zA-Z0-9]+)", web_url)
-    app_url = (
-        f"yjauction://auction?id={auction_id_match.group(1)}"
-        if auction_id_match
-        else web_url
-    )
+    # オークションIDを抽出してアプリ連携用の正式URLを生成
+    auction_id_match = re.search(r"/auction/([a-zA-Z0-9]+)", raw_url)
+    if auction_id_match:
+        auction_id = auction_id_match.group(1)
+        item_url = f"https://page.auctions.yahoo.co.jp/jp/auction/{auction_id}"
+    else:
+        item_url = raw_url
 
     print(f"[INFO] 対象商品: {title} / {price}", flush=True)
 
     ai_result = get_gemini_assessment(title, price)
 
+    # タップしやすいリンク形式に調整
     msg = (
         f"【ヤフオク新着検知】\n"
         f"**商品名:** {title}\n"
         f"**価格:** {price}\n\n"
         f"🤖 **AI査定:**\n{ai_result}\n\n"
-        f"📱 **アプリで開く:** {app_url}\n"
-        f"🌐 **Webで開く:** {web_url}"
+        f"🔗 **商品ページ（アプリで開く）:**\n<{item_url}>\n"
+        f"{item_url}"
     )
 
     send_discord(msg)
