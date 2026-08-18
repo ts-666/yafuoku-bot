@@ -13,11 +13,11 @@ DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 SEEN_IDS_FILE = "seen_ids.txt"
 
-# 確定した全20ジャンルの監視ターゲット
+# 確定全20ジャンル（誤爆防止のキーワード調整済み）
 SEARCH_TARGETS = [
     # 釣り・アウトドア・マリン
     {"genre": "トップ/オールドリール", "kw": "(五十鈴 OR BC420 OR トイマシーン OR 道楽 OR ブライトリバー OR ABU 2500C OR ABU 1500C OR ABU 5000) (ジャンク OR 現状 OR リール)"},
-    {"genre": "キャンプバーナー/ランタン", "kw": "(スノーピーク OR SOTO OR コールマン 200A OR ギガパワー) (スス OR 点火 OR 汚れ OR ジャンク OR 現状)"},
+    {"genre": "キャンプバーナー/ランタン", "kw": "(スノーピーク OR \"SOTO\" OR \"ST-310\" OR \"ST-340\" OR コールマン 200A OR ギガパワー) (スス OR 点火 OR 汚れ OR ジャンク OR 現状) -プラモデル -ミニカー"},
     {"genre": "ダイブコンピューター", "kw": "(ダイブコンピューター OR ダイビング OR SUUNTO D4i OR TUSA) (電池切れ OR 液晶 OR 現状 OR ジャンク)"},
     # 楽器・音響
     {"genre": "エレキギター/ベース本体", "kw": "(パシフィカ OR Pacifica OR Squier OR Epiphone OR ZO-3 OR Fender) (ジャンク OR ガリ OR 現状品 OR 音出ず)"},
@@ -29,7 +29,7 @@ SEARCH_TARGETS = [
     {"genre": "レトロ音響", "kw": "(ウォークマン OR カセットプレーヤー OR MDプレーヤー OR WM-) (ベルト OR 通電 OR ジャンク OR 現状)"},
     # ホビー・文具・刃物・カメラ
     {"genre": "カメラ用交換レンズ", "kw": "(単焦点 OR ズームレンズ OR オールドレンズ OR EF 50mm OR Nikkor) (クモリ OR カビ OR ジャンク OR 現状品)"},
-    {"genre": "コンパクトフィルムカメラ", "kw": "(オリンパス μ OR XA OR コニカ Big mini OR オートハーフ) (未確認 OR 電池 OR カメラまとめ OR 現状)"},
+    {"genre": "コンパクトフィルムカメラ", "kw": "(オリンパス μ OR オリンパス XA OR コニカ Big mini OR オートハーフ) (未確認 OR 電池 OR カメラまとめ OR 現状)"},
     {"genre": "ゴルフ用レーザー距離計", "kw": "(COOLSHOT OR ブッシュネル OR ピンシーカー) (電池切れ OR ケース OR 使用感 OR 現状)"},
     {"genre": "高級筆記具/万年筆", "kw": "(モンブラン OR マイスターシュテュック OR ペリカン OR 万年筆) (インク OR ペン先 OR まとめ OR 現状)"},
     {"genre": "鉄道模型/ミニカー", "kw": "(Nゲージ OR KATO OR TOMIX OR オートアート 1/18) (ケース汚れ OR ホコリ OR 走行未確認 OR まとめ)"},
@@ -54,27 +54,50 @@ def save_seen_id(auction_id):
         f.write(f"{auction_id}\n")
 
 
-def send_discord(message):
+def send_discord_embed(genre, title, current_price, buynow_price, postage_text, remain_time, app_launch_url, ai_result):
     if not DISCORD_WEBHOOK_URL:
         print("[ERROR] DISCORD_WEBHOOK_URL が未設定です。", flush=True)
         return
-    try:
-        if len(message) > 1800:
-            message = message[:1700] + "\n\n...（長文のため省略）"
 
-        res = requests.post(
-            DISCORD_WEBHOOK_URL, json={"content": message}, timeout=10
-        )
+    # 判定によって枠線の色分け（買い: 緑 0x2ecc71, 要確認: 黄 0xf1c40f）
+    color = 0x2ecc71 if "【買い】" in ai_result else 0xf1c40f
+
+    embed = {
+        "title": f"【{genre}】{title[:200]}",
+        "url": app_launch_url,
+        "color": color,
+        "fields": [
+            {
+                "name": "💰 価格・状態",
+                "value": f"**現在:** {current_price} | **即決:** {buynow_price}\n**送料:** {postage_text} | **残り:** {remain_time}",
+                "inline": False
+            },
+            {
+                "name": "🤖 AI査定 & 再販プラン",
+                "value": ai_result[:1024],
+                "inline": False
+            }
+        ],
+        "footer": {
+            "text": "📱 タイトルまたはURLをタップしてヤフオクアプリで開く"
+        }
+    }
+
+    payload = {
+        "content": f"📱 [**ヤフオクアプリで開く**]({app_launch_url})",
+        "embeds": [embed]
+    }
+
+    try:
+        res = requests.post(DISCORD_WEBHOOK_URL, json=payload, timeout=10)
         print(f"[INFO] Discord送信ステータス: {res.status_code}", flush=True)
-        if res.status_code not in (200, 204):
-            print(f"[ERROR] Discord詳細エラー: {res.text}", flush=True)
     except Exception as e:
         print(f"[ERROR] Discord error: {e}", flush=True)
 
 
 def get_gemini_assessment(genre, title, current_price, buynow_price, postage_text):
     if not GEMINI_API_KEY:
-        return "判定: 【未設定】\nメルカリ相場: 不明\n見込み利益: 不明\nメルカリ用タイトル: 不明"
+        return "判定: 【未設定】\nメルカリ想定相場: 不明\n見込み利益: 不明\nメルカリ用タイトル: 不明"
 
     try:
         genai.configure(api_key=GEMINI_API_KEY)
@@ -112,7 +135,7 @@ def get_gemini_assessment(genre, title, current_price, buynow_price, postage_tex
             "メルカリ想定相場: ○○円〜○○円\n"
             "見込み利益: 約○○円（メルカリ手数料10%・送料差引後）\n"
             "仕入れ上限目安: ○○円まで\n"
-            "メルカリ用タイトル: （管理番号や不要な記号を削った出品用タイトル40文字以内）\n"
+            "メルカリ用タイトル: （管理番号や不要記号を削った出品タイトル40字以内）\n"
             "推奨作業: （アルコール清掃/接点復活スプレー/部品交換/そのまま横流し 等）\n"
             "理由: （40〜50文字程度の簡潔な1文）"
         )
@@ -166,7 +189,8 @@ def check_target(target, seen_ids):
     kw = target["kw"]
     encoded_kw = urllib.parse.quote(kw)
 
-    url = f"https://auctions.yahoo.co.jp/search/search?p={encoded_kw}&va={encoded_kw}&is_postage_paid=0&b=1&n=10&buynow=1&s1=new&o1=d"
+    # オークション形式も含めた新着順検索URL
+    url = f"https://auctions.yahoo.co.jp/search/search?p={encoded_kw}&va={encoded_kw}&is_postage_paid=0&b=1&n=10&s1=new&o1=d"
 
     headers = {
         "User-Agent": (
@@ -219,16 +243,9 @@ def check_target(target, seen_ids):
                 print(f"[SKIP] 【見送り】のため通知スキップ: {title}", flush=True)
                 continue
 
-            msg = (
-                f"【ヤフオク新着検知 - {genre}】\n"
-                f"**商品名:** {title}\n"
-                f"**現在価格:** {current_price} | **即決:** {buynow_price}\n"
-                f"**送料:** {postage_text} | **残り時間:** {remain_time}\n\n"
-                f"🤖 **AI査定 & 再販プラン:**\n{ai_result}\n\n"
-                f"📱 [**タップしてヤフオクを開く**]({app_launch_url})"
+            send_discord_embed(
+                genre, title, current_price, buynow_price, postage_text, remain_time, app_launch_url, ai_result
             )
-
-            send_discord(msg)
             print(f"[NOTIFIED] 通知送信完了: {title}", flush=True)
 
     except Exception as e:
@@ -236,7 +253,7 @@ def check_target(target, seen_ids):
 
 
 def main():
-    print("[INFO] 全20ジャンルの自動巡回を開始します...", flush=True)
+    print("[INFO] 全20ジャンルの巡回を開始します...", flush=True)
     seen_ids = load_seen_ids()
     for target in SEARCH_TARGETS:
         check_target(target, seen_ids)
