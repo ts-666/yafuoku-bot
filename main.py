@@ -190,7 +190,7 @@ def check_target(target, seen_ids):
         if len(items) == 0:
             print(f"[WARN] ジャンル【{genre}】で0件。セレクタが古い可能性があります。", flush=True)
 
-        for item in items[:2]:
+        for item in items[:5]:
             title_elem = item.select_one(".Product__titleLink")
             if not title_elem:
                 continue
@@ -203,20 +203,28 @@ def check_target(target, seen_ids):
             if not auction_id or auction_id in seen_ids:
                 continue
 
+            buynow_elem = item.select_one(".Product__price--buynow .Product__priceValue")
+            buynow_price = buynow_elem.text.strip() if buynow_elem else "なし"
+
+            time_elem = item.select_one(".Product__time")
+            remain_time = time_elem.text.strip() if time_elem else "不明"
+
+            # オークション形式（即決価格なし）の場合、残り時間が1日以内のものだけを処理対象にする
+            # 1日より長い出品は、終了間際になった時に再度チェックできるよう seen_ids に保存せずスキップする
+            is_buynow = buynow_price != "なし"
+            is_within_one_day = ("日" not in remain_time) or ("時間" in remain_time) or ("分" in remain_time)
+
+            if not is_buynow and not is_within_one_day:
+                continue
+
             seen_ids.add(auction_id)
             save_seen_id(auction_id)
 
             price_elem = item.select_one(".Product__priceValue")
             current_price = price_elem.text.strip() if price_elem else "価格不明"
 
-            buynow_elem = item.select_one(".Product__price--buynow .Product__priceValue")
-            buynow_price = buynow_elem.text.strip() if buynow_elem else "なし"
-
             postage_elem = item.select_one(".Product__postage")
             postage_text = postage_elem.text.strip() if postage_elem else "送料要確認"
-
-            time_elem = item.select_one(".Product__time")
-            remain_time = time_elem.text.strip() if time_elem else "不明"
 
             app_launch_url = f"https://ts-666.github.io/yafuoku-bot/open.html?id={auction_id}"
 
