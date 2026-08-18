@@ -13,11 +13,11 @@ DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 SEEN_IDS_FILE = "seen_ids.txt"
 
-# 確定全20ジャンル（誤爆防止のキーワード調整済み）
+# 20ジャンル（除外キーワード調整済み）
 SEARCH_TARGETS = [
     # 釣り・アウトドア・マリン
-    {"genre": "トップ/オールドリール", "kw": "(五十鈴 OR BC420 OR トイマシーン OR 道楽 OR ブライトリバー OR ABU 2500C OR ABU 1500C OR ABU 5000) (ジャンク OR 現状 OR リール)"},
-    {"genre": "キャンプバーナー/ランタン", "kw": "(スノーピーク OR \"SOTO\" OR \"ST-310\" OR \"ST-340\" OR コールマン 200A OR ギガパワー) (スス OR 点火 OR 汚れ OR ジャンク OR 現状) -プラモデル -ミニカー"},
+    {"genre": "トップ/オールドリール", "kw": "(五十鈴工業 OR \"BC420\" OR \"BC520\" OR トイマシーン OR 道楽 DOWLUCK OR ブライトリバー OR \"ABU 2500C\" OR \"ABU 1500C\" OR \"ABU 5000\") (ジャンク OR 現状 OR リール) -フィルム -LED -フォグ -ライト -ランプ -シート -パーツ"},
+    {"genre": "キャンプバーナー/ランタン", "kw": "(スノーピーク OR \"SOTO ST-\" OR \"コールマン 200A\" OR ギガパワー) (スス OR 点火 OR 汚れ OR ジャンク OR 現状) -プラモデル -ミニカー -バイク"},
     {"genre": "ダイブコンピューター", "kw": "(ダイブコンピューター OR ダイビング OR SUUNTO D4i OR TUSA) (電池切れ OR 液晶 OR 現状 OR ジャンク)"},
     # 楽器・音響
     {"genre": "エレキギター/ベース本体", "kw": "(パシフィカ OR Pacifica OR Squier OR Epiphone OR ZO-3 OR Fender) (ジャンク OR ガリ OR 現状品 OR 音出ず)"},
@@ -59,7 +59,6 @@ def send_discord_embed(genre, title, current_price, buynow_price, postage_text, 
         print("[ERROR] DISCORD_WEBHOOK_URL が未設定です。", flush=True)
         return
 
-    # 判定によって枠線の色分け（買い: 緑 0x2ecc71, 要確認: 黄 0xf1c40f）
     color = 0x2ecc71 if "【買い】" in ai_result else 0xf1c40f
 
     embed = {
@@ -149,7 +148,8 @@ def get_gemini_assessment(genre, title, current_price, buynow_price, postage_tex
             "メルカリ相場・見込み利益・推奨作業・メルカリ最適化タイトルの生成をお願いします。"
         )
 
-        candidate_models = ["gemini-3.6-flash", "gemini-2.5-flash"]
+        # 実在する正式モデルを順に試行
+        candidate_models = ["gemini-2.5-flash", "gemini-1.5-flash", "gemini-1.5-pro"]
         for m_name in candidate_models:
             try:
                 model = genai.GenerativeModel(
@@ -163,20 +163,21 @@ def get_gemini_assessment(genre, title, current_price, buynow_price, postage_tex
             except Exception:
                 continue
 
-        available_models = [
-            m.name for m in genai.list_models()
-            if "generateContent" in m.supported_generation_methods
-        ]
-        if available_models:
-            fallback_model_name = available_models[0].replace("models/", "")
-            model = genai.GenerativeModel(
-                model_name=fallback_model_name,
-                system_instruction=system_instruction,
-                generation_config=generation_config,
-            )
-            response = model.generate_content(user_content)
-            if response and response.text:
-                return response.text.strip()
+        # 候補が通らなかった場合、利用可能なモデル一覧から動的フォールバック
+        for m in genai.list_models():
+            if "generateContent" in m.supported_generation_methods:
+                model_name = m.name.replace("models/", "")
+                try:
+                    model = genai.GenerativeModel(
+                        model_name=model_name,
+                        system_instruction=system_instruction,
+                        generation_config=generation_config,
+                    )
+                    response = model.generate_content(user_content)
+                    if response and response.text:
+                        return response.text.strip()
+                except Exception:
+                    continue
 
         return "判定: 【要確認】\nAI査定の取得に失敗しました。"
 
@@ -189,7 +190,6 @@ def check_target(target, seen_ids):
     kw = target["kw"]
     encoded_kw = urllib.parse.quote(kw)
 
-    # オークション形式も含めた新着順検索URL
     url = f"https://auctions.yahoo.co.jp/search/search?p={encoded_kw}&va={encoded_kw}&is_postage_paid=0&b=1&n=10&s1=new&o1=d"
 
     headers = {
