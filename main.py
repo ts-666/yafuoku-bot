@@ -56,12 +56,6 @@ def get_gemini_assessment(title, current_price, buynow_price, postage_text):
             "理由: （40〜50文字程度の簡潔な1文）"
         )
 
-        model = genai.GenerativeModel(
-            model_name="gemini-2.5-flash",
-            system_instruction=system_instruction,
-            generation_config=generation_config,
-        )
-
         user_content = (
             f"商品名: {title}\n"
             f"現在価格: {current_price}\n"
@@ -69,11 +63,43 @@ def get_gemini_assessment(title, current_price, buynow_price, postage_text):
             f"送料: {postage_text}\n"
             "メルカリ相場・見込み利益・メルカリ最適化タイトルの生成をお願いします。"
         )
-        response = model.generate_content(user_content)
 
-        if response and response.text:
-            return response.text.strip()
-        return "判定の生成に失敗しました。"
+        # 優先モデル一覧（順にフォールバック試行）
+        candidate_models = ["gemini-3.6-flash", "gemini-2.5-flash"]
+        response = None
+        last_error = None
+
+        for m_name in candidate_models:
+            try:
+                model = genai.GenerativeModel(
+                    model_name=m_name,
+                    system_instruction=system_instruction,
+                    generation_config=generation_config,
+                )
+                response = model.generate_content(user_content)
+                if response and response.text:
+                    return response.text.strip()
+            except Exception as e:
+                last_error = e
+                continue
+
+        # すべて失敗した場合は利用可能なモデルを動的取得
+        available_models = [
+            m.name for m in genai.list_models()
+            if "generateContent" in m.supported_generation_methods
+        ]
+        if available_models:
+            fallback_model_name = available_models[0].replace("models/", "")
+            model = genai.GenerativeModel(
+                model_name=fallback_model_name,
+                system_instruction=system_instruction,
+                generation_config=generation_config,
+            )
+            response = model.generate_content(user_content)
+            if response and response.text:
+                return response.text.strip()
+
+        return f"AI設定エラー: {last_error}"
 
     except Exception as e:
         return f"AI設定エラー: {e}"
@@ -101,27 +127,21 @@ def main():
 
     item = items[0]
 
-    # タイトル
     title_elem = item.select_one(".Product__titleLink")
     title = title_elem.text.strip() if title_elem else "タイトル不明"
 
-    # 現在価格
     price_elem = item.select_one(".Product__priceValue")
     current_price = price_elem.text.strip() if price_elem else "価格不明"
 
-    # 即決価格
     buynow_elem = item.select_one(".Product__price--buynow .Product__priceValue")
     buynow_price = buynow_elem.text.strip() if buynow_elem else "なし"
 
-    # 送料
     postage_elem = item.select_one(".Product__postage")
     postage_text = postage_elem.text.strip() if postage_elem else "送料要確認"
 
-    # 残り時間
     time_elem = item.select_one(".Product__time")
     remain_time = time_elem.text.strip() if time_elem else "不明"
 
-    # URL / オークションID
     raw_url = title_elem["href"] if title_elem else ""
     auction_id_match = re.search(r"/auction/([a-zA-Z0-9]+)", raw_url)
     auction_id = auction_id_match.group(1) if auction_id_match else ""
