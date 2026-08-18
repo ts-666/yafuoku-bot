@@ -2,7 +2,6 @@ import os
 import re
 import sys
 import requests
-import urllib.parse
 from bs4 import BeautifulSoup
 import google.generativeai as genai
 from dotenv import load_dotenv
@@ -99,13 +98,8 @@ def main():
     auction_id_match = re.search(r"/auction/([a-zA-Z0-9]+)", raw_url)
     auction_id = auction_id_match.group(1) if auction_id_match else ""
 
-    # ヤフオクアプリ起動用スキーム
-    app_scheme = f"yjauction://auction?id={auction_id}"
-    
-    # DiscordのWebリンクから直接アプリ起動を呼ぶ中継URL
-    encoded_scheme = urllib.parse.quote(app_scheme, safe='')
-    app_launcher_url = f"https://href.li/?{encoded_scheme}"
-    
+    # GitHub Pages経由のアプリ起動URL
+    app_launch_url = f"https://ts-666.github.io/yafuoku-bot/open.html?id={auction_id}"
     web_url = f"https://page.auctions.yahoo.co.jp/jp/auction/{auction_id}"
 
     print(f"[INFO] 対象商品: {title} / {price}", flush=True)
@@ -117,7 +111,7 @@ def main():
         f"**商品名:** {title}\n"
         f"**価格:** {price}\n\n"
         f"🤖 **AI査定:**\n{ai_result}\n\n"
-        f"📱 [**ここをタップしてヤフオクアプリで開く**]({app_launcher_url})\n\n"
+        f"📱 [**ここをタップしてヤフオクアプリで開く**]({app_launch_url})\n\n"
         f"🌐 [Webブラウザで開く]({web_url})"
     )
 
