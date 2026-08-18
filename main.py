@@ -13,7 +13,7 @@ DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 SEEN_IDS_FILE = "seen_ids.txt"
 
-# 20ジャンル（実績のあるキーワード構成）
+# 20ジャンル構成（実績ベース）
 SEARCH_TARGETS = [
     # 釣り・アウトドア・マリン
     {"genre": "トップ/オールドリール", "kw": "リール (五十鈴 OR BC420 OR BC520 OR トイマシーン OR 道楽 OR ブライトリバー OR 2500C OR 1500C OR 5000)"},
@@ -109,9 +109,9 @@ def get_gemini_assessment(genre, title, current_price, buynow_price, postage_tex
             "指定されたジャンルと全く異なる商品の場合は、1行目を必ず『判定: 【見送り】』にしてください。\n\n"
             "【出力フォーマット】\n"
             "判定: 【買い】/【見送り】/【要確認】\n"
-            "メルカリ想定相場: ○○円〜○○円\n"
-            "見込み利益: 約○○円（メルカリ手数料10%・送料差引後）\n"
-            "仕入れ上限目安: ○○円まで\n"
+            "メルカリ想定相場: ○○○○円〜○○○○円\n"
+            "見込み利益: 約○○○○円（メルカリ手数料10%・送料差引後）\n"
+            "仕入れ上限目安: ○○○○円まで\n"
             "メルカリ用タイトル: （管理番号等を削った出品用タイトル40字以内）\n"
             "推奨作業: （アルコール清掃/接点復活スプレー/部品交換/そのまま横流し 等）\n"
             "理由: （40〜50文字程度の簡潔な1文）"
@@ -125,7 +125,6 @@ def get_gemini_assessment(genre, title, current_price, buynow_price, postage_tex
             f"送料: {postage_text}"
         )
 
-        # 実績のあるモデルで生成
         candidate_models = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-2.5-flash"]
         for m_name in candidate_models:
             try:
@@ -155,8 +154,8 @@ def check_target(target, seen_ids):
     kw = target["kw"]
     encoded_kw = urllib.parse.quote(kw)
 
-    # 即決のみ (buynow=1) で検索
-    url = f"https://auctions.yahoo.co.jp/search/search?p={encoded_kw}&buynow=1&is_postage_paid=0&b=1&n=10&s1=new&o1=d"
+    # 全出品形式を対象に新着順で取得（即決制限なし）
+    url = f"https://auctions.yahoo.co.jp/search/search?p={encoded_kw}&is_postage_paid=0&b=1&n=10&s1=new&o1=d"
 
     headers = {
         "User-Agent": (
@@ -169,7 +168,7 @@ def check_target(target, seen_ids):
         soup = BeautifulSoup(res.text, "html.parser")
         items = soup.select(".Product")
 
-        print(f"[INFO] ジャンル【{genre}】即決新着: {len(items)}件", flush=True)
+        print(f"[INFO] ジャンル【{genre}】新着取得件数: {len(items)}件", flush=True)
 
         for item in items[:2]:
             title_elem = item.select_one(".Product__titleLink")
@@ -191,13 +190,13 @@ def check_target(target, seen_ids):
             current_price = price_elem.text.strip() if price_elem else "価格不明"
 
             buynow_elem = item.select_one(".Product__price--buynow .Product__priceValue")
-            buynow_price = buynow_elem.text.strip() if buynow_elem else current_price
+            buynow_price = buynow_elem.text.strip() if buynow_elem else "なし"
 
             postage_elem = item.select_one(".Product__postage")
             postage_text = postage_elem.text.strip() if postage_elem else "送料要確認"
 
             time_elem = item.select_one(".Product__time")
-            remain_time = time_elem.text.strip() if time_elem else "即決"
+            remain_time = time_elem.text.strip() if time_elem else "不明"
 
             app_launch_url = f"https://ts-666.github.io/yafuoku-bot/open.html?id={auction_id}"
 
@@ -205,9 +204,8 @@ def check_target(target, seen_ids):
                 genre, title, current_price, buynow_price, postage_text
             )
 
-            # AI査定が取れなかったもの、または【見送り】判定のものはDiscordに絶対に通知しない
             if not ai_result or "【見送り】" in ai_result.split("\n")[0]:
-                print(f"[SKIP] 見送りまたは査定スキップ: {title}", flush=True)
+                print(f"[SKIP] 見送りまたは査定除外: {title}", flush=True)
                 continue
 
             send_discord_embed(
@@ -220,7 +218,7 @@ def check_target(target, seen_ids):
 
 
 def main():
-    print("[INFO] 全20ジャンル（即決のみ）の巡回を開始します...", flush=True)
+    print("[INFO] 全20ジャンルの巡回を開始します...", flush=True)
     seen_ids = load_seen_ids()
     for target in SEARCH_TARGETS:
         check_target(target, seen_ids)
