@@ -2,6 +2,7 @@ import os
 import re
 import sys
 import requests
+import urllib.parse
 from bs4 import BeautifulSoup
 import google.generativeai as genai
 from dotenv import load_dotenv
@@ -98,23 +99,26 @@ def main():
     auction_id_match = re.search(r"/auction/([a-zA-Z0-9]+)", raw_url)
     auction_id = auction_id_match.group(1) if auction_id_match else ""
 
+    # ヤフオクアプリ起動用スキーム
+    app_scheme = f"yjauction://auction?id={auction_id}"
+    
+    # DiscordのWebリンクから直接アプリ起動を呼ぶ中継URL
+    encoded_scheme = urllib.parse.quote(app_scheme, safe='')
+    app_launcher_url = f"https://href.li/?{encoded_scheme}"
+    
     web_url = f"https://page.auctions.yahoo.co.jp/jp/auction/{auction_id}"
 
     print(f"[INFO] 対象商品: {title} / {price}", flush=True)
 
     ai_result = get_gemini_assessment(title, price)
 
-    # アプリ起動用のURLスキームとWeb用の2系統を用意
     msg = (
         f"【ヤフオク新着検知】\n"
         f"**商品名:** {title}\n"
         f"**価格:** {price}\n\n"
         f"🤖 **AI査定:**\n{ai_result}\n\n"
-        f"📱 **ヤフオクアプリ直接起動:**\n"
-        f"yjauction://auction?id={auction_id}\n\n"
-        f"🌐 **Webページで開く:**\n"
-        f"{web_url}\n\n"
-        f"💡 *アプリ起動URLを長押し→「リンクを開く」でヤフオクアプリが直接起動します*"
+        f"📱 [**ここをタップしてヤフオクアプリで開く**]({app_launcher_url})\n\n"
+        f"🌐 [Webブラウザで開く]({web_url})"
     )
 
     send_discord(msg)
