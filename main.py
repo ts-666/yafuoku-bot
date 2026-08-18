@@ -64,11 +64,7 @@ def get_gemini_assessment(title, current_price, buynow_price, postage_text):
             "メルカリ相場・見込み利益・メルカリ最適化タイトルの生成をお願いします。"
         )
 
-        # 優先モデル一覧（順にフォールバック試行）
         candidate_models = ["gemini-3.6-flash", "gemini-2.5-flash"]
-        response = None
-        last_error = None
-
         for m_name in candidate_models:
             try:
                 model = genai.GenerativeModel(
@@ -79,11 +75,9 @@ def get_gemini_assessment(title, current_price, buynow_price, postage_text):
                 response = model.generate_content(user_content)
                 if response and response.text:
                     return response.text.strip()
-            except Exception as e:
-                last_error = e
+            except Exception:
                 continue
 
-        # すべて失敗した場合は利用可能なモデルを動的取得
         available_models = [
             m.name for m in genai.list_models()
             if "generateContent" in m.supported_generation_methods
@@ -99,7 +93,7 @@ def get_gemini_assessment(title, current_price, buynow_price, postage_text):
             if response and response.text:
                 return response.text.strip()
 
-        return f"AI設定エラー: {last_error}"
+        return "判定: 【要確認】\nAI査定の取得に失敗しました。"
 
     except Exception as e:
         return f"AI設定エラー: {e}"
@@ -122,7 +116,6 @@ def main():
 
     if not items:
         print("[WARN] 商品が0件のため終了します。", flush=True)
-        send_discord("【テスト通知】商品が取得できませんでした（0件）。")
         return
 
     item = items[0]
@@ -156,6 +149,11 @@ def main():
         title, current_price, buynow_price, postage_text
     )
 
+    # 判定が【見送り】の場合は通知をスキップ
+    if "判定: 【見送り】" in ai_result or "【見送り】" in ai_result.split("\n")[0]:
+        print("[INFO] AI判定が【見送り】のため、Discord通知をスキップしました。", flush=True)
+        return
+
     msg = (
         f"【ヤフオク新着検知】\n"
         f"**商品名:** {title}\n"
@@ -166,7 +164,7 @@ def main():
     )
 
     send_discord(msg)
-    print("[INFO] 処理完了", flush=True)
+    print("[INFO] Discord通知完了", flush=True)
 
 
 if __name__ == "__main__":
