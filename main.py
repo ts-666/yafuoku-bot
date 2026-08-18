@@ -98,9 +98,10 @@ def main():
     auction_id_match = re.search(r"/auction/([a-zA-Z0-9]+)", raw_url)
     if auction_id_match:
         auction_id = auction_id_match.group(1)
-        item_url = f"https://page.auctions.yahoo.co.jp/jp/auction/{auction_id}"
+        # iOSで確実にアプリ直接起動が動くディープリンク用URL
+        app_direct_url = f"https://auctions.yahoo.co.jp/jp/auction/{auction_id}"
     else:
-        item_url = raw_url
+        app_direct_url = raw_url
 
     print(f"[INFO] 対象商品: {title} / {price}", flush=True)
 
@@ -111,7 +112,7 @@ def main():
         f"**商品名:** {title}\n"
         f"**価格:** {price}\n\n"
         f"🤖 **AI査定:**\n{ai_result}\n\n"
-        f"👉 [📱 **ヤフオクアプリで開く**]({item_url})"
+        f"👉 **商品リンク:**\n{app_direct_url}"
     )
 
     send_discord(msg)
