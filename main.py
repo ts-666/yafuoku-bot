@@ -13,7 +13,6 @@ DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 SEEN_IDS_FILE = "seen_ids.txt"
 
-# 20ジャンル
 SEARCH_TARGETS = [
     # 釣り・アウトドア・マリン
     {"genre": "トップ/オールドリール", "kw": "リール (五十鈴 OR BC420 OR BC520 OR トイマシーン OR 道楽 OR ブライトリバー OR \"ABU 2500C\" OR \"ABU 1500C\" OR \"ABU 5000\")"},
@@ -97,6 +96,14 @@ def send_discord_embed(genre, title, current_price, buynow_price, postage_text, 
         print(f"[ERROR] Discord error: {e}", flush=True)
 
 
+def clean_ai_response(text):
+    """思考ログなどの余計な前置きを完全に除去し、『判定:』以降のみを抽出する"""
+    idx = text.find("判定:")
+    if idx != -1:
+        return text[idx:].strip()
+    return text.strip()
+
+
 def get_gemini_assessment(genre, title, current_price, buynow_price, postage_text):
     if not GEMINI_API_KEY:
         return "判定: 【未設定】\nメルカリ想定相場: 不明\n見込み利益: 不明\nメルカリ用タイトル: 不明"
@@ -104,17 +111,21 @@ def get_gemini_assessment(genre, title, current_price, buynow_price, postage_tex
     try:
         genai.configure(api_key=GEMINI_API_KEY)
 
+        # 思考モードを完全に無効化 (thinking_budget: 0)
         generation_config = {
             "max_output_tokens": 1000,
-            "temperature": 0.1,
+            "temperature": 0.0,
+            "thinking_config": {
+                "thinking_budget": 0
+            }
         }
 
         system_instruction = (
             "あなたはヤフオク仕入れ・メルカリ再販のプロ鑑定士です。\n"
-            "英語や前置き、解説、思考プロセスは絶対に出力しないでください。必ず日本語で以下のフォーマット通りにのみ出力してください。\n\n"
+            "必ず以下の日本語フォーマットで、1行目の『判定: 』から直接出力してください。\n\n"
             "【ジャンル不一致時の対応】\n"
-            "商品が監視対象ジャンルと明らかに異なる場合は、1行目を必ず『判定: 【見送り】』として出力してください。\n\n"
-            "【出力フォーマット】（1行目からこの形式で出力すること）\n"
+            "商品が指定された監視対象ジャンルと異なる場合は、1行目を必ず『判定: 【見送り】』として出力してください。\n\n"
+            "【出力フォーマット】\n"
             "判定: 【買い】/【見送り】/【要確認】\n"
             "メルカリ想定相場: ○○円〜○○円\n"
             "見込み利益: 約○○円（メルカリ手数料10%・送料差引後）\n"
@@ -129,11 +140,10 @@ def get_gemini_assessment(genre, title, current_price, buynow_price, postage_tex
             f"商品名: {title}\n"
             f"現在価格: {current_price}\n"
             f"即決価格: {buynow_price}\n"
-            f"送料: {postage_text}\n\n"
-            "上記フォーマットに厳格に従って査定結果を出力してください。"
+            f"送料: {postage_text}"
         )
 
-        candidate_models = ["gemini-2.5-flash", "gemini-1.5-flash", "gemini-1.5-pro"]
+        candidate_models = ["gemini-2.5-flash", "gemini-1.5-flash"]
         for m_name in candidate_models:
             try:
                 model = genai.GenerativeModel(
@@ -143,24 +153,9 @@ def get_gemini_assessment(genre, title, current_price, buynow_price, postage_tex
                 )
                 response = model.generate_content(user_content)
                 if response and response.text:
-                    return response.text.strip()
+                    return clean_ai_response(response.text)
             except Exception:
                 continue
-
-        for m in genai.list_models():
-            if "generateContent" in m.supported_generation_methods:
-                model_name = m.name.replace("models/", "")
-                try:
-                    model = genai.GenerativeModel(
-                        model_name=model_name,
-                        system_instruction=system_instruction,
-                        generation_config=generation_config,
-                    )
-                    response = model.generate_content(user_content)
-                    if response and response.text:
-                        return response.text.strip()
-                except Exception:
-                    continue
 
         return "判定: 【要確認】\nAI査定の取得に失敗しました。"
 
