@@ -30,10 +30,10 @@ def send_discord(message):
         print(f"[ERROR] Discord error: {e}", flush=True)
 
 
-def get_gemini_assessment(title, price):
+def get_gemini_assessment(title, current_price, buynow_price, postage_text):
     if not GEMINI_API_KEY:
         print("[WARN] GEMINI_API_KEY が未設定です。", flush=True)
-        return "APIキー未設定"
+        return "判定: 【未設定】\nメルカリ相場: 不明\n見込み利益: 不明\nメルカリ用タイトル: 不明"
 
     try:
         genai.configure(api_key=GEMINI_API_KEY)
@@ -44,21 +44,33 @@ def get_gemini_assessment(title, price):
         }
 
         system_instruction = (
-            "あなたはヤフオクせどりの査定AIです。英語、前置き、思考プロセスは一切出力せず、"
-            "必ず以下の日本語フォーマットのみを返してください。\n"
+            "あなたはヤフオク仕入れ・メルカリ再販のプロ鑑定AIです。\n"
+            "以下のフォーマットに厳格に従い、日本語のみを出力してください。\n"
+            "前置き、解説、思考プロセス、挨拶は一切出力しないでください。\n\n"
+            "【出力フォーマット】\n"
             "判定: 【買い】/【見送り】/【要確認】\n"
-            "理由: （50文字程度の短い1文で簡潔に記載）"
+            "メルカリ想定相場: ○○円〜○○円\n"
+            "見込み利益: 約○○円（メルカリ手数料10%・送料差引後）\n"
+            "仕入れ上限目安: ○○円まで\n"
+            "メルカリ用タイトル: （管理番号や無駄な装飾文字を削った出品用タイトル40文字以内）\n"
+            "理由: （40〜50文字程度の簡潔な1文）"
         )
 
         model = genai.GenerativeModel(
-            model_name="gemini-3.6-flash",
+            model_name="gemini-2.5-flash",
             system_instruction=system_instruction,
             generation_config=generation_config,
         )
 
-        user_content = f"商品名: {title}\n価格: {price}\n仕入れ判定をお願いします。"
+        user_content = (
+            f"商品名: {title}\n"
+            f"現在価格: {current_price}\n"
+            f"即決価格: {buynow_price}\n"
+            f"送料: {postage_text}\n"
+            "メルカリ相場・見込み利益・メルカリ最適化タイトルの生成をお願いします。"
+        )
         response = model.generate_content(user_content)
-        
+
         if response and response.text:
             return response.text.strip()
         return "判定の生成に失敗しました。"
@@ -88,28 +100,49 @@ def main():
         return
 
     item = items[0]
+
+    # タイトル
     title_elem = item.select_one(".Product__titleLink")
-    price_elem = item.select_one(".Product__priceValue")
-
     title = title_elem.text.strip() if title_elem else "タイトル不明"
-    price = price_elem.text.strip() if price_elem else "価格不明"
-    raw_url = title_elem["href"] if title_elem else ""
 
+    # 現在価格
+    price_elem = item.select_one(".Product__priceValue")
+    current_price = price_elem.text.strip() if price_elem else "価格不明"
+
+    # 即決価格
+    buynow_elem = item.select_one(".Product__price--buynow .Product__priceValue")
+    buynow_price = buynow_elem.text.strip() if buynow_elem else "なし"
+
+    # 送料
+    postage_elem = item.select_one(".Product__postage")
+    postage_text = postage_elem.text.strip() if postage_elem else "送料要確認"
+
+    # 残り時間
+    time_elem = item.select_one(".Product__time")
+    remain_time = time_elem.text.strip() if time_elem else "不明"
+
+    # URL / オークションID
+    raw_url = title_elem["href"] if title_elem else ""
     auction_id_match = re.search(r"/auction/([a-zA-Z0-9]+)", raw_url)
     auction_id = auction_id_match.group(1) if auction_id_match else ""
 
-    app_launch_url = f"https://ts-666.github.io/yafuoku-bot/open.html?id={auction_id}"
+    app_launch_url = (
+        f"https://ts-666.github.io/yafuoku-bot/open.html?id={auction_id}"
+    )
 
-    print(f"[INFO] 対象商品: {title} / {price}", flush=True)
+    print(f"[INFO] 対象商品: {title}", flush=True)
 
-    ai_result = get_gemini_assessment(title, price)
+    ai_result = get_gemini_assessment(
+        title, current_price, buynow_price, postage_text
+    )
 
     msg = (
         f"【ヤフオク新着検知】\n"
         f"**商品名:** {title}\n"
-        f"**価格:** {price}\n\n"
-        f"🤖 **AI査定:**\n{ai_result}\n\n"
-        f"📱 [**ここをタップしてヤフオクアプリで開く**]({app_launch_url})"
+        f"**現在価格:** {current_price} | **即決:** {buynow_price}\n"
+        f"**送料:** {postage_text} | **残り時間:** {remain_time}\n\n"
+        f"🤖 **AI査定 & メルカリ分析:**\n{ai_result}\n\n"
+        f"📱 [**タップしてヤフオクを開く**]({app_launch_url})"
     )
 
     send_discord(msg)
