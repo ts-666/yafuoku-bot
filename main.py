@@ -13,34 +13,35 @@ DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 SEEN_IDS_FILE = "seen_ids.txt"
 
+# 20ジャンル（実績のあるキーワード構成）
 SEARCH_TARGETS = [
     # 釣り・アウトドア・マリン
-    {"genre": "トップ/オールドリール", "kw": "リール (五十鈴 OR BC420 OR BC520 OR トイマシーン OR 道楽 OR ブライトリバー OR \"ABU 2500C\" OR \"ABU 1500C\" OR \"ABU 5000\")"},
-    {"genre": "キャンプバーナー/ランタン", "kw": "(バーナー OR ランタン OR コンロ) (スノーピーク OR ST310 OR ST-310 OR ST340 OR ST-340 OR \"コールマン 200A\" OR ギガパワー)"},
-    {"genre": "ダイブコンピューター", "kw": "(ダイブコンピューター OR ダイブコンピュータ OR \"SUUNTO D4\" OR \"TUSA IQ\")"},
+    {"genre": "トップ/オールドリール", "kw": "リール (五十鈴 OR BC420 OR BC520 OR トイマシーン OR 道楽 OR ブライトリバー OR 2500C OR 1500C OR 5000)"},
+    {"genre": "キャンプバーナー/ランタン", "kw": "(バーナー OR ランタン) (スノーピーク OR ST-310 OR ST-340 OR コールマン OR ギガパワー)"},
+    {"genre": "ダイブコンピューター", "kw": "(ダイブコンピューター OR ダイブコンピュータ OR D4i OR TUSA)"},
     
     # 楽器・音響
-    {"genre": "エレキギター/ベース本体", "kw": "(ギター OR ベース) (パシフィカ OR Pacifica OR Squier OR Epiphone OR ZO-3 OR Fender) (ジャンク OR ガリ OR 現状 OR 音出ず)"},
-    {"genre": "ギターケース/ギグバッグ", "kw": "(ギターケース OR ギグバッグ OR ハードケース) (MONO OR SKB OR ギター) (汚れ OR 現状 OR ジャンク)"},
-    {"genre": "ギター用ピックアップ", "kw": "ピックアップ (ダンカン OR Duncan OR DiMarzio OR EMG) ギター"},
-    {"genre": "エフェクター", "kw": "エフェクター (BOSS OR OD-1 OR DS-1 OR BD-2 OR ZOOM) (ガリ OR 通電 OR ジャンク OR 現状)"},
-    {"genre": "高級ヘッドホン/イヤホン", "kw": "(ヘッドホン OR イヤホン) (WH-1000X OR QuietComfort OR Beats) (パッド OR 劣化 OR ジャンク OR 現状)"},
-    {"genre": "ポータブルアンプ/DAC", "kw": "(ポタアン OR DAC OR ヘッドホンアンプ) (FiiO OR iFi OR USB-DAC) (ジャンク OR 動作未確認 OR 本体のみ)"},
-    {"genre": "レトロ音響", "kw": "(ウォークマン OR カセットプレーヤー OR MDプレーヤー OR \"WM-\") (ジャンク OR 不動 OR ベルト OR 通電)"},
+    {"genre": "エレキギター/ベース本体", "kw": "(ギター OR ベース) (パシフィカ OR Pacifica OR Squier OR Epiphone OR ZO-3 OR Fender) (ジャンク OR ガリ OR 音出ず)"},
+    {"genre": "ギターケース/ギグバッグ", "kw": "(ギターケース OR ギグバッグ OR ハードケース) (MONO OR SKB OR ギター)"},
+    {"genre": "ギター用ピックアップ", "kw": "ピックアップ (ダンカン OR Duncan OR DiMarzio OR EMG)"},
+    {"genre": "エフェクター", "kw": "エフェクター (BOSS OR OD-1 OR DS-1 OR BD-2 OR ZOOM) (ジャンク OR ガリ OR 現状)"},
+    {"genre": "高級ヘッドホン/イヤホン", "kw": "(ヘッドホン OR イヤホン) (WH-1000X OR QuietComfort OR Beats)"},
+    {"genre": "ポータブルアンプ/DAC", "kw": "(ポタアン OR DAC OR ヘッドホンアンプ) (FiiO OR iFi OR USB-DAC)"},
+    {"genre": "レトロ音響", "kw": "(ウォークマン OR カセットプレーヤー OR MDプレーヤー OR WM-) (ジャンク OR 不動 OR 現状)"},
     
     # カメラ・ホビー・文具・包丁
-    {"genre": "カメラ用交換レンズ", "kw": "レンズ (単焦点 OR オールドレンズ OR \"EF 50mm\" OR Nikkor) (カビ OR クモリ OR ジャンク OR 現状)"},
-    {"genre": "コンパクトフィルムカメラ", "kw": "(フィルムカメラ OR コンパクトカメラ) (オリンパス OR コニカ OR オートハーフ OR \"μ\" OR \"XA\") (未確認 OR 電池 OR 現状)"},
+    {"genre": "カメラ用交換レンズ", "kw": "レンズ (単焦点 OR オールドレンズ OR EF OR Nikkor) (カビ OR クモリ OR ジャンク)"},
+    {"genre": "コンパクトフィルムカメラ", "kw": "(フィルムカメラ OR コンパクトカメラ) (オリンパス OR コニカ OR オートハーフ OR μ OR XA)"},
     {"genre": "ゴルフ用レーザー距離計", "kw": "(距離計 OR レーザー距離計) (COOLSHOT OR ブッシュネル OR ピンシーカー)"},
     {"genre": "高級筆記具/万年筆", "kw": "(万年筆 OR ボールペン) (モンブラン OR マイスターシュテュック OR ペリカン)"},
-    {"genre": "鉄道模型/ミニカー", "kw": "(Nゲージ OR ミニカー) (KATO OR TOMIX OR オートアート) (ジャンク OR 現状 OR 走行未確認)"},
-    {"genre": "高級包丁/和包丁", "kw": "(包丁 OR 和包丁 OR 牛刀 OR 柳刃) (堺孝行 OR 正本 OR 有次 OR GLOBAL) (サビ OR 刃こぼれ OR 銘)"},
+    {"genre": "鉄道模型/ミニカー", "kw": "(Nゲージ OR ミニカー) (KATO OR TOMIX OR オートアート)"},
+    {"genre": "高級包丁/和包丁", "kw": "(包丁 OR 和包丁 OR 牛刀 OR 柳刃) (堺孝行 OR 正本 OR 有次 OR GLOBAL)"},
     
     # 家電・工具
-    {"genre": "ゲーム機/周辺機器", "kw": "(Switch OR PS4 OR PS5 OR Proコン OR Joy-Con) (本体 OR コントローラー) (ドリフト OR ジャンク OR 動作未確認)"},
-    {"genre": "掃除機/ルンバ", "kw": "(掃除機 OR ルンバ) (ダイソン OR Dyson OR iRobot) (バッテリー OR エラー OR ジャンク)"},
-    {"genre": "高級理美容家電", "kw": "(ドライヤー OR ヘアアイロン) (ReFa OR KINUJO OR ナノケア) (ジャンク OR 現状 OR ホコリ)"},
-    {"genre": "プロ用電動工具", "kw": "インパクトドライバー (マキタ OR HiKOKI OR TD171 OR TD172 OR TD173 OR WH36DC) (ジャンク OR 汚れ OR 現状)"},
+    {"genre": "ゲーム機/周辺機器", "kw": "(Switch OR PS4 OR PS5 OR Proコン OR Joy-Con) (ジャンク OR 動作未確認 OR ドリフト)"},
+    {"genre": "掃除機/ルンバ", "kw": "(掃除機 OR ルンバ) (ダイソン OR Dyson) (バッテリー OR エラー OR ジャンク)"},
+    {"genre": "高級理美容家電", "kw": "(ドライヤー OR ヘアアイロン) (ReFa OR KINUJO OR ナノケア)"},
+    {"genre": "プロ用電動工具", "kw": "インパクトドライバー (マキタ OR HiKOKI OR TD171 OR TD172 OR TD173) (ジャンク OR 現状)"},
 ]
 
 
@@ -58,7 +59,6 @@ def save_seen_id(auction_id):
 
 def send_discord_embed(genre, title, current_price, buynow_price, postage_text, remain_time, app_launch_url, ai_result):
     if not DISCORD_WEBHOOK_URL:
-        print("[ERROR] DISCORD_WEBHOOK_URL が未設定です。", flush=True)
         return
 
     color = 0x2ecc71 if "【買い】" in ai_result else 0xf1c40f
@@ -96,35 +96,17 @@ def send_discord_embed(genre, title, current_price, buynow_price, postage_text, 
         print(f"[ERROR] Discord error: {e}", flush=True)
 
 
-def clean_ai_response(text):
-    """思考ログなどの余計な前置きを完全に除去し、『判定:』以降のみを抽出する"""
-    idx = text.find("判定:")
-    if idx != -1:
-        return text[idx:].strip()
-    return text.strip()
-
-
 def get_gemini_assessment(genre, title, current_price, buynow_price, postage_text):
     if not GEMINI_API_KEY:
-        return "判定: 【未設定】\nメルカリ想定相場: 不明\n見込み利益: 不明\nメルカリ用タイトル: 不明"
+        return None
 
     try:
         genai.configure(api_key=GEMINI_API_KEY)
 
-        # 思考モードを完全に無効化 (thinking_budget: 0)
-        generation_config = {
-            "max_output_tokens": 1000,
-            "temperature": 0.0,
-            "thinking_config": {
-                "thinking_budget": 0
-            }
-        }
-
         system_instruction = (
-            "あなたはヤフオク仕入れ・メルカリ再販のプロ鑑定士です。\n"
-            "必ず以下の日本語フォーマットで、1行目の『判定: 』から直接出力してください。\n\n"
-            "【ジャンル不一致時の対応】\n"
-            "商品が指定された監視対象ジャンルと異なる場合は、1行目を必ず『判定: 【見送り】』として出力してください。\n\n"
+            "あなたはヤフオク仕入れ・メルカリ再販のプロ鑑定AIです。\n"
+            "思考や前置き、英語は一切出力せず、必ず1行目から以下の日本語フォーマットのみを出力してください。\n"
+            "指定されたジャンルと全く異なる商品の場合は、1行目を必ず『判定: 【見送り】』にしてください。\n\n"
             "【出力フォーマット】\n"
             "判定: 【買い】/【見送り】/【要確認】\n"
             "メルカリ想定相場: ○○円〜○○円\n"
@@ -136,31 +118,36 @@ def get_gemini_assessment(genre, title, current_price, buynow_price, postage_tex
         )
 
         user_content = (
-            f"対象ジャンル: {genre}\n"
+            f"ジャンル: {genre}\n"
             f"商品名: {title}\n"
             f"現在価格: {current_price}\n"
             f"即決価格: {buynow_price}\n"
             f"送料: {postage_text}"
         )
 
-        candidate_models = ["gemini-2.5-flash", "gemini-1.5-flash"]
+        # 実績のあるモデルで生成
+        candidate_models = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-2.5-flash"]
         for m_name in candidate_models:
             try:
                 model = genai.GenerativeModel(
                     model_name=m_name,
-                    system_instruction=system_instruction,
-                    generation_config=generation_config,
+                    system_instruction=system_instruction
                 )
                 response = model.generate_content(user_content)
                 if response and response.text:
-                    return clean_ai_response(response.text)
+                    text = response.text.strip()
+                    idx = text.find("判定:")
+                    res = text[idx:].strip() if idx != -1 else text
+                    if "メルカリ想定相場:" in res:
+                        return res
             except Exception:
                 continue
 
-        return "判定: 【要確認】\nAI査定の取得に失敗しました。"
+        return None
 
     except Exception as e:
-        return f"AI設定エラー: {e}"
+        print(f"[ERROR] AI査定例外: {e}", flush=True)
+        return None
 
 
 def check_target(target, seen_ids):
@@ -168,7 +155,8 @@ def check_target(target, seen_ids):
     kw = target["kw"]
     encoded_kw = urllib.parse.quote(kw)
 
-    url = f"https://auctions.yahoo.co.jp/search/search?p={encoded_kw}&is_postage_paid=0&b=1&n=10&s1=new&o1=d"
+    # 即決のみ (buynow=1) で検索
+    url = f"https://auctions.yahoo.co.jp/search/search?p={encoded_kw}&buynow=1&is_postage_paid=0&b=1&n=10&s1=new&o1=d"
 
     headers = {
         "User-Agent": (
@@ -181,9 +169,9 @@ def check_target(target, seen_ids):
         soup = BeautifulSoup(res.text, "html.parser")
         items = soup.select(".Product")
 
-        print(f"[INFO] ジャンル【{genre}】取得件数: {len(items)}件", flush=True)
+        print(f"[INFO] ジャンル【{genre}】即決新着: {len(items)}件", flush=True)
 
-        for item in items:
+        for item in items[:2]:
             title_elem = item.select_one(".Product__titleLink")
             if not title_elem:
                 continue
@@ -203,13 +191,13 @@ def check_target(target, seen_ids):
             current_price = price_elem.text.strip() if price_elem else "価格不明"
 
             buynow_elem = item.select_one(".Product__price--buynow .Product__priceValue")
-            buynow_price = buynow_elem.text.strip() if buynow_elem else "なし"
+            buynow_price = buynow_elem.text.strip() if buynow_elem else current_price
 
             postage_elem = item.select_one(".Product__postage")
             postage_text = postage_elem.text.strip() if postage_elem else "送料要確認"
 
             time_elem = item.select_one(".Product__time")
-            remain_time = time_elem.text.strip() if time_elem else "不明"
+            remain_time = time_elem.text.strip() if time_elem else "即決"
 
             app_launch_url = f"https://ts-666.github.io/yafuoku-bot/open.html?id={auction_id}"
 
@@ -217,8 +205,9 @@ def check_target(target, seen_ids):
                 genre, title, current_price, buynow_price, postage_text
             )
 
-            if "判定: 【見送り】" in ai_result or "【見送り】" in ai_result.split("\n")[0]:
-                print(f"[SKIP] 【見送り】のため通知スキップ: {title}", flush=True)
+            # AI査定が取れなかったもの、または【見送り】判定のものはDiscordに絶対に通知しない
+            if not ai_result or "【見送り】" in ai_result.split("\n")[0]:
+                print(f"[SKIP] 見送りまたは査定スキップ: {title}", flush=True)
                 continue
 
             send_discord_embed(
@@ -227,11 +216,11 @@ def check_target(target, seen_ids):
             print(f"[NOTIFIED] 通知送信完了: {title}", flush=True)
 
     except Exception as e:
-        print(f"[ERROR] ジャンル【{genre}】取得エラー: {e}", flush=True)
+        print(f"[ERROR] ジャンル【{genre}】エラー: {e}", flush=True)
 
 
 def main():
-    print("[INFO] 全20ジャンルの巡回を開始します...", flush=True)
+    print("[INFO] 全20ジャンル（即決のみ）の巡回を開始します...", flush=True)
     seen_ids = load_seen_ids()
     for target in SEARCH_TARGETS:
         check_target(target, seen_ids)
