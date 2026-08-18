@@ -13,32 +13,32 @@ DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 SEEN_IDS_FILE = "seen_ids.txt"
 
-# 20ジャンル（除外キーワード調整済み）
+# 全20ジャンル（誤爆ゼロ・取りこぼし防止の完全チューニング版）
 SEARCH_TARGETS = [
     # 釣り・アウトドア・マリン
-    {"genre": "トップ/オールドリール", "kw": "(五十鈴工業 OR \"BC420\" OR \"BC520\" OR トイマシーン OR 道楽 DOWLUCK OR ブライトリバー OR \"ABU 2500C\" OR \"ABU 1500C\" OR \"ABU 5000\") (ジャンク OR 現状 OR リール) -フィルム -LED -フォグ -ライト -ランプ -シート -パーツ"},
-    {"genre": "キャンプバーナー/ランタン", "kw": "(スノーピーク OR \"SOTO ST-\" OR \"コールマン 200A\" OR ギガパワー) (スス OR 点火 OR 汚れ OR ジャンク OR 現状) -プラモデル -ミニカー -バイク"},
-    {"genre": "ダイブコンピューター", "kw": "(ダイブコンピューター OR ダイビング OR SUUNTO D4i OR TUSA) (電池切れ OR 液晶 OR 現状 OR ジャンク)"},
+    {"genre": "トップ/オールドリール", "kw": "(五十鈴工業 OR \"BC420\" OR \"BC520\" OR トイマシーン OR \"道楽\" OR ブライトリバー OR \"ABU 2500C\" OR \"ABU 1500C\" OR \"ABU 5000\") (リール OR ベイトリール) -フィルム -LED -フォグ -ライト -ランプ -シート -パーツ -レコード -プレーヤー -オーディオ"},
+    {"genre": "キャンプバーナー/ランタン", "kw": "(スノーピーク OR \"ST-310\" OR \"ST310\" OR \"ST-340\" OR \"ST340\" OR \"コールマン 200A\" OR ギガパワー) (バーナー OR ランタン OR コンロ OR シングルバーナー) -プラモデル -ミニカー -バイク -車 -テント -テーブル -チェア"},
+    {"genre": "ダイブコンピューター", "kw": "(ダイブコンピューター OR ダイブコンピュータ OR \"SUUNTO D4\" OR \"SUUNTO D6\" OR \"TUSA IQ\") (ダイビング OR スキューバ) -ウェットスーツ -フィン -マスク -シュノーケル"},
     # 楽器・音響
-    {"genre": "エレキギター/ベース本体", "kw": "(パシフィカ OR Pacifica OR Squier OR Epiphone OR ZO-3 OR Fender) (ジャンク OR ガリ OR 現状品 OR 音出ず)"},
-    {"genre": "ギターケース/ギグバッグ", "kw": "(ギター ハードケース OR ギグバッグ OR MONO OR SKB) (汚れ OR 現状 OR ジャンク OR 保管品)"},
-    {"genre": "ギター用ピックアップ", "kw": "(ピックアップ OR Duncan OR DiMarzio OR EMG) (ジャンク OR 導通 OR 現状 OR セット)"},
-    {"genre": "エフェクター", "kw": "(エフェクター OR BOSS OR OD-1 OR DS-1 OR BD-2 OR ZOOM) (ガリ OR 通電 OR ジャンク OR 現状)"},
-    {"genre": "高級ヘッドホン/イヤホン", "kw": "(WH-1000X OR QuietComfort OR Beats OR ヘッドホン) (パッド OR 劣化 OR ジャンク OR 現状)"},
-    {"genre": "ポータブルアンプ/DAC", "kw": "(ポタアン OR FiiO BTR OR iFi hip-dac OR USB-DAC) (傷 OR 動作未確認 OR バッテリー OR 本体のみ)"},
-    {"genre": "レトロ音響", "kw": "(ウォークマン OR カセットプレーヤー OR MDプレーヤー OR WM-) (ベルト OR 通電 OR ジャンク OR 現状)"},
+    {"genre": "エレキギター/ベース本体", "kw": "(パシフィカ OR Pacifica OR Squier OR Epiphone OR ZO-3 OR Fender) (エレキギター OR エレキベース) (ジャンク OR ガリ OR 現状品 OR 音出ず) -ミニチュア -フィギュア"},
+    {"genre": "ギターケース/ギグバッグ", "kw": "(ギター ハードケース OR ギグバッグ OR MONO OR SKB) (ギターケース OR ギグケース) (汚れ OR 現状 OR ジャンク OR 保管品)"},
+    {"genre": "ギター用ピックアップ", "kw": "(セイモアダンカン OR Duncan OR DiMarzio OR EMG) (ピックアップ OR PU) (エレキギター OR ギター) (ジャンク OR 導通 OR 現状 OR セット) -CD -レンズ -トラック"},
+    {"genre": "エフェクター", "kw": "(エフェクター OR BOSS OR OD-1 OR DS-1 OR BD-2 OR ZOOM) (コンパクトエフェクター OR マルチエフェクター) (ガリ OR 通電 OR ジャンク OR 現状)"},
+    {"genre": "高級ヘッドホン/イヤホン", "kw": "(\"WH-1000X\" OR \"QuietComfort\" OR \"Beats Studio\" OR \"Beats Solo\") (ヘッドホン OR ヘッドフォン) (パッド OR 劣化 OR ジャンク OR 現状)"},
+    {"genre": "ポータブルアンプ/DAC", "kw": "(ポタアン OR \"FiiO BTR\" OR \"FiiO Q\" OR \"iFi hip-dac\" OR \"GO blu\") (ヘッドホンアンプ OR DAC) (傷 OR 動作未確認 OR バッテリー OR 本体のみ) -ケーブル単体"},
+    {"genre": "レトロ音響", "kw": "(ウォークマン OR カセットプレーヤー OR MDプレーヤー OR \"WM-\") (ポータブルカセット OR カセットウォークマン OR MDウォークマン) (ベルト OR 通電 OR ジャンク OR 現状)"},
     # ホビー・文具・刃物・カメラ
-    {"genre": "カメラ用交換レンズ", "kw": "(単焦点 OR ズームレンズ OR オールドレンズ OR EF 50mm OR Nikkor) (クモリ OR カビ OR ジャンク OR 現状品)"},
-    {"genre": "コンパクトフィルムカメラ", "kw": "(オリンパス μ OR オリンパス XA OR コニカ Big mini OR オートハーフ) (未確認 OR 電池 OR カメラまとめ OR 現状)"},
-    {"genre": "ゴルフ用レーザー距離計", "kw": "(COOLSHOT OR ブッシュネル OR ピンシーカー) (電池切れ OR ケース OR 使用感 OR 現状)"},
-    {"genre": "高級筆記具/万年筆", "kw": "(モンブラン OR マイスターシュテュック OR ペリカン OR 万年筆) (インク OR ペン先 OR まとめ OR 現状)"},
-    {"genre": "鉄道模型/ミニカー", "kw": "(Nゲージ OR KATO OR TOMIX OR オートアート 1/18) (ケース汚れ OR ホコリ OR 走行未確認 OR まとめ)"},
-    {"genre": "高級包丁/和包丁", "kw": "(堺孝行 OR 正本 OR 有次 OR GLOBAL OR 本焼) (サビ OR 刃こぼれ OR 銘 OR 包丁まとめ)"},
+    {"genre": "カメラ用交換レンズ", "kw": "(\"単焦点レンズ\" OR \"ズームレンズ\" OR \"オールドレンズ\" OR \"EF 50mm\" OR \"Nikkor\") (レンズ) (クモリ OR カビ OR ジャンク OR 現状品) -フィルター単体 -キャップ単体"},
+    {"genre": "コンパクトフィルムカメラ", "kw": "(\"オリンパス μ\" OR \"オリンパス XA\" OR \"Big mini\" OR \"オートハーフ\") (フィルムカメラ OR コンパクトカメラ) (未確認 OR 電池 OR 現状)"},
+    {"genre": "ゴルフ用レーザー距離計", "kw": "(\"COOLSHOT\" OR \"ピンシーカー\" OR \"ブッシュネル\") (ゴルフ 距離計 OR レーザー距離計) (電池切れ OR ケース OR 使用感 OR 現状)"},
+    {"genre": "高級筆記具/万年筆", "kw": "(マイスターシュテュック OR \"ペリカン スーベレーン\" OR \"カスタム74\") (万年筆 OR ボールペン) (インク OR ペン先 OR 現状) -インクのみ -替え芯"},
+    {"genre": "鉄道模型/ミニカー", "kw": "(\"Nゲージ\" OR \"KATO\" OR \"TOMIX\" OR \"オートアート 1/18\") (車両セット OR 10両 OR 7両 OR ミニカー) (ケース汚れ OR ホコリ OR 走行未確認 OR まとめ)"},
+    {"genre": "高級包丁/和包丁", "kw": "(\"堺孝行\" OR \"正本\" OR \"有次\" OR \"GLOBAL 包丁\" OR \"本焼 包丁\") (和包丁 OR 牛刀 OR 柳刃 OR 三徳) (サビ OR 刃こぼれ OR 銘)"},
     # 家電・ゲーム・工具
-    {"genre": "ゲーム機/周辺機器", "kw": "(Switch OR PS4 OR PS5 OR Proコン OR Joy-Con OR 3DS) (ドリフト OR スティック OR ジャンク OR 動作未確認)"},
-    {"genre": "掃除機/ルンバ", "kw": "(ダイソン OR ルンバ OR Dyson V8 OR Dyson V10) (バッテリー OR フィルター OR エラー OR ジャンク)"},
-    {"genre": "高級理美容家電", "kw": "(ReFa OR ドライヤー OR KINUJO OR ナノケア) (ホコリ OR コード OR ジャンク OR 現状)"},
-    {"genre": "プロ用電動工具", "kw": "(マキタ TD OR HiKOKI WH OR インパクトドライバー) (粉塵 OR 汚れ OR 軸 OR ジャンク)"},
+    {"genre": "ゲーム機/周辺機器", "kw": "(Switch OR PS4 OR PS5 OR Proコン OR Joy-Con OR 3DS) (本体 OR コントローラー) (ドリフト OR スティック OR ジャンク OR 動作未確認) -ソフトのみ -ケースのみ"},
+    {"genre": "掃除機/ルンバ", "kw": "(\"ダイソン V8\" OR \"ダイソン V10\" OR \"ダイソン V11\" OR ルンバ) (掃除機 OR ロボット掃除機) (バッテリー OR フィルター OR エラー OR ジャンク) -スタンドのみ -アタッチメントのみ"},
+    {"genre": "高級理美容家電", "kw": "(\"ReFa ドライヤー\" OR \"ReFa アイロン\" OR \"KINUJO ドライヤー\" OR \"ナノケア ドライヤー\") (ドライヤー OR ヘアアイロン) (ホコリ OR コード OR ジャンク OR 現状)"},
+    {"genre": "プロ用電動工具", "kw": "(\"TD171\" OR \"TD172\" OR \"TD173\" OR \"WH36DC\" OR \"マキタ インパクト\" OR \"HiKOKI インパクト\") (インパクトドライバー OR 本体) (粉塵 OR 汚れ OR 軸 OR ジャンク)"},
 ]
 
 
@@ -148,7 +148,6 @@ def get_gemini_assessment(genre, title, current_price, buynow_price, postage_tex
             "メルカリ相場・見込み利益・推奨作業・メルカリ最適化タイトルの生成をお願いします。"
         )
 
-        # 実在する正式モデルを順に試行
         candidate_models = ["gemini-2.5-flash", "gemini-1.5-flash", "gemini-1.5-pro"]
         for m_name in candidate_models:
             try:
@@ -163,7 +162,6 @@ def get_gemini_assessment(genre, title, current_price, buynow_price, postage_tex
             except Exception:
                 continue
 
-        # 候補が通らなかった場合、利用可能なモデル一覧から動的フォールバック
         for m in genai.list_models():
             if "generateContent" in m.supported_generation_methods:
                 model_name = m.name.replace("models/", "")
