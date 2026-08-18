@@ -19,7 +19,7 @@ SEARCH_TARGETS = [
     {"genre": "トップ/オールドリール", "kw": "リール (五十鈴 OR BC420 OR BC520 OR トイマシーン OR 道楽 OR ブライトリバー OR 2500C OR 1500C OR 5000)"},
     {"genre": "キャンプバーナー/ランタン", "kw": "(バーナー OR ランタン) (スノーピーク OR ST-310 OR ST-340 OR コールマン OR ギガパワー)"},
     {"genre": "ダイブコンピューター", "kw": "(ダイブコンピューター OR ダイブコンピュータ OR D4i OR TUSA)"},
-    
+
     # 楽器・音響
     {"genre": "エレキギター/ベース本体", "kw": "(ギター OR ベース) (パシフィカ OR Pacifica OR Squier OR Epiphone OR ZO-3 OR Fender) (ジャンク OR ガリ OR 音出ず)"},
     {"genre": "ギターケース/ギグバッグ", "kw": "(ギターケース OR ギグバッグ OR ハードケース) (MONO OR SKB OR ギター)"},
@@ -28,20 +28,28 @@ SEARCH_TARGETS = [
     {"genre": "高級ヘッドホン/イヤホン", "kw": "(ヘッドホン OR イヤホン) (WH-1000X OR QuietComfort OR Beats)"},
     {"genre": "ポータブルアンプ/DAC", "kw": "(ポタアン OR DAC OR ヘッドホンアンプ) (FiiO OR iFi OR USB-DAC)"},
     {"genre": "レトロ音響", "kw": "(ウォークマン OR カセットプレーヤー OR MDプレーヤー OR WM-) (ジャンク OR 不動 OR 現状)"},
-    
+
     # カメラ・ホビー・文具・包丁
     {"genre": "カメラ用交換レンズ", "kw": "レンズ (単焦点 OR オールドレンズ OR EF OR Nikkor) (カビ OR クモリ OR ジャンク)"},
     {"genre": "コンパクトフィルムカメラ", "kw": "(フィルムカメラ OR コンパクトカメラ) (オリンパス OR コニカ OR オートハーフ OR μ OR XA)"},
     {"genre": "ゴルフ用レーザー距離計", "kw": "(距離計 OR レーザー距離計) (COOLSHOT OR ブッシュネル OR ピンシーカー)"},
-    {"genre": "高級筆記具/万年笔", "kw": "(万年筆 OR ボールペン) (モンブラン OR マイスターシュテュック OR ペリカン)"},
+    {"genre": "高級筆記具/万年筆", "kw": "(万年筆 OR ボールペン) (モンブラン OR マイスターシュテュック OR ペリカン)"},
     {"genre": "鉄道模型/ミニカー", "kw": "(Nゲージ OR ミニカー) (KATO OR TOMIX OR オートアート)"},
     {"genre": "高級包丁/和包丁", "kw": "(包丁 OR 和包丁 OR 牛刀 OR 柳刃) (堺孝行 OR 正本 OR 有次 OR GLOBAL)"},
-    
+
     # 家電・工具
     {"genre": "ゲーム機/周辺機器", "kw": "(Switch OR PS4 OR PS5 OR Proコン OR Joy-Con) (ジャンク OR 動作未確認 OR ドリフト)"},
     {"genre": "掃除機/ルンバ", "kw": "(掃除機 OR ルンバ) (ダイソン OR Dyson) (バッテリー OR エラー OR ジャンク)"},
     {"genre": "高級理美容家電", "kw": "(ドライヤー OR ヘアアイロン) (ReFa OR KINUJO OR ナノケア)"},
     {"genre": "プロ用電動工具", "kw": "インパクトドライバー (マキタ OR HiKOKI OR TD171 OR TD172 OR TD173) (ジャンク OR 現状)"},
+]
+
+# 2026年8月時点でGemini 1.0系・1.5系は完全に廃止(shutdown)されており404エラーになるため、
+# 現行の安定モデルのみを候補にする。上から順に試し、最初に成功したものを使う。
+GEMINI_CANDIDATE_MODELS = [
+    "gemini-flash-latest",   # 常に最新のFlash系モデルを指すエイリアス
+    "gemini-2.5-flash",
+    "gemini-2.5-flash-lite",
 ]
 
 
@@ -59,6 +67,7 @@ def save_seen_id(auction_id):
 
 def send_discord_embed(genre, title, current_price, buynow_price, postage_text, remain_time, app_launch_url, ai_result):
     if not DISCORD_WEBHOOK_URL:
+        print("[ERROR] DISCORD_WEBHOOK_URL が設定されていません。通知をスキップします。", flush=True)
         return
 
     color = 0x2ecc71 if "【買い】" in ai_result else 0xf1c40f
@@ -92,12 +101,15 @@ def send_discord_embed(genre, title, current_price, buynow_price, postage_text, 
     try:
         res = requests.post(DISCORD_WEBHOOK_URL, json=payload, timeout=10)
         print(f"[INFO] Discord送信ステータス: {res.status_code}", flush=True)
+        if res.status_code >= 300:
+            print(f"[ERROR] Discord送信失敗レスポンス: {res.text[:500]}", flush=True)
     except Exception as e:
         print(f"[ERROR] Discord error: {e}", flush=True)
 
 
 def get_gemini_assessment(genre, title, current_price, buynow_price, postage_text):
     if not GEMINI_API_KEY:
+        print("[ERROR] GEMINI_API_KEY が設定されていません。", flush=True)
         return None
 
     try:
@@ -125,8 +137,8 @@ def get_gemini_assessment(genre, title, current_price, buynow_price, postage_tex
             f"送料: {postage_text}"
         )
 
-        candidate_models = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-2.5-flash"]
-        for m_name in candidate_models:
+        last_error = None
+        for m_name in GEMINI_CANDIDATE_MODELS:
             try:
                 model = genai.GenerativeModel(
                     model_name=m_name,
@@ -139,9 +151,14 @@ def get_gemini_assessment(genre, title, current_price, buynow_price, postage_tex
                     res = text[idx:].strip() if idx != -1 else text
                     if "メルカリ想定相場:" in res:
                         return res
-            except Exception:
+                    else:
+                        print(f"[WARN] モデル {m_name} のレスポンスが期待フォーマット外: {text[:200]}", flush=True)
+            except Exception as e:
+                last_error = e
+                print(f"[WARN] モデル {m_name} 呼び出し失敗: {e}", flush=True)
                 continue
 
+        print(f"[ERROR] 全モデルでAI査定に失敗しました。最後のエラー: {last_error}", flush=True)
         return None
 
     except Exception as e:
@@ -169,6 +186,9 @@ def check_target(target, seen_ids):
         items = soup.select(".Product")
 
         print(f"[INFO] ジャンル【{genre}】新着取得件数: {len(items)}件", flush=True)
+
+        if len(items) == 0:
+            print(f"[WARN] ジャンル【{genre}】で0件。セレクタが古い可能性があります。", flush=True)
 
         for item in items[:2]:
             title_elem = item.select_one(".Product__titleLink")
@@ -205,8 +225,11 @@ def check_target(target, seen_ids):
             )
 
             # AI査定が取れなかったもの、または【見送り】判定のものはDiscordに通知しない
-            if not ai_result or "【見送り】" in ai_result.split("\n")[0]:
-                print(f"[SKIP] 見送りまたは査定除外: {title}", flush=True)
+            if not ai_result:
+                print(f"[SKIP] AI査定取得失敗のためスキップ: {title}", flush=True)
+                continue
+            if "【見送り】" in ai_result.split("\n")[0]:
+                print(f"[SKIP] 見送り判定のためスキップ: {title}", flush=True)
                 continue
 
             send_discord_embed(
