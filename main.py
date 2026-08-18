@@ -33,7 +33,7 @@ SEARCH_TARGETS = [
     {"genre": "カメラ用交換レンズ", "kw": "レンズ (単焦点 OR オールドレンズ OR EF OR Nikkor) (カビ OR クモリ OR ジャンク)"},
     {"genre": "コンパクトフィルムカメラ", "kw": "(フィルムカメラ OR コンパクトカメラ) (オリンパス OR コニカ OR オートハーフ OR μ OR XA)"},
     {"genre": "ゴルフ用レーザー距離計", "kw": "(距離計 OR レーザー距離計) (COOLSHOT OR ブッシュネル OR ピンシーカー)"},
-    {"genre": "高級筆記具/万年筆", "kw": "(万年筆 OR ボールペン) (モンブラン OR マイスターシュテュック OR ペリカン)"},
+    {"genre": "高級筆記具/万年笔", "kw": "(万年筆 OR ボールペン) (モンブラン OR マイスターシュテュック OR ペリカン)"},
     {"genre": "鉄道模型/ミニカー", "kw": "(Nゲージ OR ミニカー) (KATO OR TOMIX OR オートアート)"},
     {"genre": "高級包丁/和包丁", "kw": "(包丁 OR 和包丁 OR 牛刀 OR 柳刃) (堺孝行 OR 正本 OR 有次 OR GLOBAL)"},
     
@@ -109,9 +109,9 @@ def get_gemini_assessment(genre, title, current_price, buynow_price, postage_tex
             "指定されたジャンルと全く異なる商品の場合は、1行目を必ず『判定: 【見送り】』にしてください。\n\n"
             "【出力フォーマット】\n"
             "判定: 【買い】/【見送り】/【要確認】\n"
-            "メルカリ想定相場: ○○○○円〜○○○○円\n"
-            "見込み利益: 約○○○○円（メルカリ手数料10%・送料差引後）\n"
-            "仕入れ上限目安: ○○○○円まで\n"
+            "メルカリ想定相場: ○○円〜○○円\n"
+            "見込み利益: 約○○円（メルカリ手数料10%・送料差引後）\n"
+            "仕入れ上限目安: ○○円まで\n"
             "メルカリ用タイトル: （管理番号等を削った出品用タイトル40字以内）\n"
             "推奨作業: （アルコール清掃/接点復活スプレー/部品交換/そのまま横流し 等）\n"
             "理由: （40〜50文字程度の簡潔な1文）"
@@ -154,7 +154,7 @@ def check_target(target, seen_ids):
     kw = target["kw"]
     encoded_kw = urllib.parse.quote(kw)
 
-    # 全出品形式を対象に新着順で取得（即決制限なし）
+    # 即決制限なし（全出品形式）で新着順検索
     url = f"https://auctions.yahoo.co.jp/search/search?p={encoded_kw}&is_postage_paid=0&b=1&n=10&s1=new&o1=d"
 
     headers = {
@@ -204,6 +204,7 @@ def check_target(target, seen_ids):
                 genre, title, current_price, buynow_price, postage_text
             )
 
+            # AI査定が取れなかったもの、または【見送り】判定のものはDiscordに通知しない
             if not ai_result or "【見送り】" in ai_result.split("\n")[0]:
                 print(f"[SKIP] 見送りまたは査定除外: {title}", flush=True)
                 continue
