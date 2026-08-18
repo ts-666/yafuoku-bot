@@ -97,21 +97,24 @@ def main():
 
     auction_id_match = re.search(r"/auction/([a-zA-Z0-9]+)", raw_url)
     auction_id = auction_id_match.group(1) if auction_id_match else ""
-    
-    # ヤフオクのユニバーサルリンク（iOSアプリ起動用）
-    universal_url = f"https://page.auctions.yahoo.co.jp/jp/auction/{auction_id}"
+
+    web_url = f"https://page.auctions.yahoo.co.jp/jp/auction/{auction_id}"
 
     print(f"[INFO] 対象商品: {title} / {price}", flush=True)
 
     ai_result = get_gemini_assessment(title, price)
 
+    # アプリ起動用のURLスキームとWeb用の2系統を用意
     msg = (
         f"【ヤフオク新着検知】\n"
         f"**商品名:** {title}\n"
         f"**価格:** {price}\n\n"
         f"🤖 **AI査定:**\n{ai_result}\n\n"
-        f"🆔 **商品ID (タップでコピー):** `{auction_id}`\n"
-        f"🔗 **商品リンク:**\n{universal_url}"
+        f"📱 **ヤフオクアプリ直接起動:**\n"
+        f"yjauction://auction?id={auction_id}\n\n"
+        f"🌐 **Webページで開く:**\n"
+        f"{web_url}\n\n"
+        f"💡 *アプリ起動URLを長押し→「リンクを開く」でヤフオクアプリが直接起動します*"
     )
 
     send_discord(msg)
