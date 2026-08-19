@@ -16,7 +16,7 @@ SEEN_IDS_FILE = "seen_ids.txt"
 # 20ジャンル構成（実績ベース）
 SEARCH_TARGETS = [
     # 釣り・アウトドア・マリン
-    {"genre": "トップ/オールドリール", "kw": "リール (五十鈴 OR BC420 OR BC520 OR トイマシーン OR 道楽 OR ブライトリバー OR 2500C OR 1500C OR 5000)"},
+    {"genre": "トップ/リール", "kw": "リール (五十鈴 OR BC420 OR BC520 OR トイマシーン OR 道楽 OR ブライトリバー OR 2500C OR 1500C OR 5000)"},
     {"genre": "キャンプバーナー/ランタン", "kw": "(バーナー OR ランタン) (スノーピーク OR ST-310 OR ST-340 OR コールマン OR ギガパワー)"},
     {"genre": "ダイブコンピューター", "kw": "(ダイブコンピューター OR ダイブコンピュータ OR D4i OR TUSA)"},
 
@@ -30,18 +30,18 @@ SEARCH_TARGETS = [
     {"genre": "レトロ音響", "kw": "(ウォークマン OR カセットプレーヤー OR MDプレーヤー OR WM-) (ジャンク OR 不動 OR 現状)"},
 
     # カメラ・ホビー・文具・包丁
-    {"genre": "カメラ用交換レンズ", "kw": "レンズ (単焦点 OR オールドレンズ OR EF OR Nikkor) (カビ OR クモリ OR ジャンク)"},
-    {"genre": "コンパクトフィルムカメラ", "kw": "(フィルムカメラ OR コンパクトカメラ) (オリンパス OR コニカ OR オートハーフ OR μ OR XA)"},
+    {"genre": "カメラ用レンズ", "kw": "レンズ (単焦点 OR オールドレンズ OR EF OR Nikkor) (カビ OR クモリ OR ジャンク)"},
+    {"genre": "フィルムカメラ", "kw": "(フィルムカメラ OR コンパクトカメラ) (オリンパス OR コニカ OR オートハーフ OR μ OR XA)"},
     {"genre": "ゴルフ用レーザー距離計", "kw": "(距離計 OR レーザー距離計) (COOLSHOT OR ブッシュネル OR ピンシーカー)"},
     {"genre": "高級筆記具/万年筆", "kw": "(万年筆 OR ボールペン) (モンブラン OR マイスターシュテュック OR ペリカン)"},
     {"genre": "鉄道模型/ミニカー", "kw": "(Nゲージ OR ミニカー) (KATO OR TOMIX OR オートアート)"},
-    {"genre": "高級包丁/和包丁", "kw": "(包丁 OR 和包丁 OR 牛刀 OR 柳刃) (堺孝行 OR 正本 OR 有次 OR GLOBAL)"},
+    {"genre": "包丁/和包丁", "kw": "(包丁 OR 和包丁 OR 牛刀 OR 柳刃) (堺孝行 OR 正本 OR 有次 OR GLOBAL)"},
 
     # 家電・工具
     {"genre": "ゲーム機/周辺機器", "kw": "(Switch OR PS4 OR PS5 OR Proコン OR Joy-Con) (ジャンク OR 動作未確認 OR ドリフト)"},
     {"genre": "掃除機/ルンバ", "kw": "(掃除機 OR ルンバ) (ダイソン OR Dyson) (バッテリー OR エラー OR ジャンク)"},
     {"genre": "高級理美容家電", "kw": "(ドライヤー OR ヘアアイロン) (ReFa OR KINUJO OR ナノケア)"},
-    {"genre": "プロ用電動工具", "kw": "インパクトドライバー (マキタ OR HiKOKI OR TD171 OR TD172 OR TD173) (ジャンク OR 現状)"},
+    {"genre": "電動工具", "kw": "インパクトドライバー (マキタ OR HiKOKI OR TD171 OR TD172 OR TD173) (ジャンク OR 現状)"},
 ]
 
 # 2026年8月時点でGemini 1.0系・1.5系は完全に廃止(shutdown)されており404エラーになるため、
